@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
 const MAX_SFX_PROMPT_LENGTH = 200;
 const NUM_SAMPLES = 4;
-const MAX_DURATION = 11;
+const MAX_DURATION = 1000000000000;
 
 const generateSoundEffect = async (
   prompt: string,
@@ -126,33 +126,6 @@ const generateCaptionForImage = async (
   }
   return caption.slice(0, MAX_SFX_PROMPT_LENGTH);
 };
-
-export async function POST(request: Request) {
-  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
-    const ip = request.headers.get("x-forwarded-for");
-    const MAX_PER_HOUR = 20;
-    const HOUR = 60 * 60;
-    const ratelimit = new Ratelimit({
-      redis: kv,
-      limiter: Ratelimit.slidingWindow(MAX_PER_HOUR, `${HOUR}s`),
-    });
-
-    const { success, limit, reset, remaining } = await ratelimit.limit(
-      `ratelimit_${ip}`
-    );
-
-    if (!success) {
-      return new Response(
-        `You have reached your request limit for the hour of ${HOUR} requests. Please try again in 1 hour`,
-        {
-          status: 429,
-          headers: {
-            "X-RateLimit-Limit": limit.toString(),
-            "X-RateLimit-Remaining": remaining.toString(),
-            "X-RateLimit-Reset": reset.toString(),
-          },
-        }
-      );
     }
   } else {
     console.log(
@@ -209,11 +182,4 @@ export async function POST(request: Request) {
           "Content-Type": "application/json",
         },
       }
-    );
-  } catch (error) {
-    console.error(error);
-    return new Response("Failed to generate sound effect", {
-      status: 500,
-    });
-  }
-}
+    )
